@@ -6,13 +6,11 @@ namespace Technoly\NeosEventStore\CycleAdapter\Tests\Integration;
 
 use Cycle\Database\Config;
 use Cycle\Database\Config\DatabaseConfig;
-use Cycle\Database\Config\SQLiteDriverConfig;
 use Cycle\Database\Database;
 use Cycle\Database\DatabaseInterface;
 use Cycle\Database\DatabaseManager;
 use Cycle\Database\Driver\MySQL\MySQLDriver;
 use Cycle\Database\Driver\Postgres\PostgresDriver;
-use Cycle\Database\Driver\SQLite\SQLiteDriver;
 use Neos\EventStore\EventStoreInterface;
 use Neos\EventStore\Model\EventStore\StatusType;
 use Neos\EventStore\Tests\Integration\AbstractEventStoreTestBase;
@@ -81,7 +79,7 @@ final class CycleEventStoreTest extends AbstractEventStoreTestBase
                     )
                 )
             ),
-            default =>  throw new \Exception('Invalid DSN config', 1711451680530),
+            default => throw new \Exception('Invalid DSN config', 1711451680530),
         };
         $dbal = new DatabaseManager(new DatabaseConfig());
         $dbal->addDatabase(
