@@ -3,6 +3,9 @@
 Database Adapter implementation for the [neos/eventstore](https://github.com/neos/eventstore) package.
 It is essentially an adaption of the [Doctrine adapter](https://github.com/neos/eventstore-doctrineadapter) for [Cycle ORM](https://cycle-orm.dev/) / the [Spiral framework](https://spiral.dev/).
 
+> **Note**
+> Currently this package supports MySQL (including MariaDB) and SQLite.
+
 ## Usage
 
 Install via [composer](https://getcomposer.org):
@@ -21,13 +24,25 @@ See [Cycle documentation](https://cycle-orm.dev/docs/database-connect/current/en
 With that, an Event Store instance can be created:
 
 ```php
+use Cycle\Database;
+use Cycle\Database\Config;
 use Technoly\NeosEventStore\CycleAdapter\CycleEventStore;
 
+$dbConfig = new Config\DatabaseConfig([
+    // your database configuration
+]);
+$dbal = new Database\DatabaseManager($dbConfig);
+
 $eventTableName = 'some_namespace_events';
-$eventStore = new CycleEventStore($connection, $eventTableName);
+$eventStore = new CycleEventStore($dbal->database('default'), $eventTableName);
 ```
 
 See [README](https://github.com/neos/eventstore/blob/main/README.md#usage) of the `neos/eventstore` package for details on how to write and read events.
+
+## Known limitations
+
+The CycleEventStore->status() method returns OK even if setup is required due to false
+positives for MariaDB (JSON column stored as longtext).
 
 ## Contribution
 
