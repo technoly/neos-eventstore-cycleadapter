@@ -73,6 +73,6 @@ jobs:
       - name: Run tests (PostgreSQL)
         run: composer run-script test
         env:
-          DB_DSN: "pgsql:host=127.0.0.1;port=${{ job.services.mysql.ports['5432'] }};dbname=eventstore"
+          DB_DSN: "pgsql:host=127.0.0.1;port=${{ job.services.postgres.ports['5432'] }};dbname=eventstore"
           DB_USER: "root"
           DB_PASSWORD: "password"
