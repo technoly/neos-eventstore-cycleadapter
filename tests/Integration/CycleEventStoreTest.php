@@ -63,13 +63,6 @@ final class CycleEventStoreTest extends AbstractEventStoreTestBase
         Assert::notEmpty($dsn);
         $type = explode(':', $dsn)[0];
         $driver = match ($type) {
-            'sqlite' => SQLiteDriver::create(
-                new SQLiteDriverConfig(
-                    new Config\SQLite\DsnConnectionConfig(
-                        $dsn
-                    )
-                )
-            ),
             'mysql' => MySQLDriver::create(
                 new Config\MySQLDriverConfig(
                     new Config\MySQL\DsnConnectionConfig(
