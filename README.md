@@ -4,7 +4,7 @@ Database Adapter implementation for the [neos/eventstore](https://github.com/neo
 It is essentially an adaption of the [Doctrine adapter](https://github.com/neos/eventstore-doctrineadapter) for [Cycle ORM](https://cycle-orm.dev/) / the [Spiral framework](https://spiral.dev/).
 
 > **Note**
-> Currently this package supports MySQL (including MariaDB) and SQLite.
+> Currently this package supports MySQL (including MariaDB) and PostgreSQL.
 
 ## Usage
 
