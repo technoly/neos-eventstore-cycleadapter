@@ -1,0 +1,49 @@
+{
+    "name": "technoly/neoseventstore-cycleadapter",
+    "description": "Cycle ORM based implementation for the neos/event-store",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "neos/eventstore": "^1",
+        "cycle/database": "^2.3",
+        "webmozart/assert": "^1.10",
+        "psr/clock": "^1"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest",
+        "phpstan/phpstan": "^1.10",
+        "squizlabs/php_codesniffer": "^4.0.x-dev",
+        "phpunit/phpunit": "^10",
+        "brianium/paratest": "^7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Technoly\\NeosEventStore\\CycleAdapter\\": "src/",
+            "Technoly\\NeosEventStore\\CycleAdapter\\Tests\\": "tests/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Technoly\\NeosEventStore\\CycleAdapter\\Tests\\": "tests/",
+            "Neos\\EventStore\\Tests\\": "vendor/neos/eventstore/tests/"
+        }
+    },
+    "scripts": {
+        "test:phpstan": "phpstan",
+        "test:cs": "phpcs --colors src",
+        "test:cs:fix": "phpcbf --colors src",
+        "test:integration": "phpunit tests/Integration --exclude-group=parallel",
+        "test:consistency": [
+            "Technoly\\NeosEventStore\\CycleAdapter\\Tests\\Integration\\CycleEventStoreTest::consistency_prepare",
+            "paratest tests/Integration --group=parallel --functional --processes 10",
+            "Technoly\\NeosEventStore\\CycleAdapter\\Tests\\Integration\\CycleEventStoreTest::consistency_validateEvents"
+        ],
+        "test": [
+            "@test:phpstan",
+            "@test:cs",
+            "@test:integration",
+            "@test:consistency"
+        ]
+    }
+}
