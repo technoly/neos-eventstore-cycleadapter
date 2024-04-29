@@ -181,7 +181,7 @@ final class CycleEventStore implements EventStoreInterface
         // An optional causation id, usually a UUID
         $schema->column('causationid')->string();
         // Timestamp of the event publishing
-        $schema->column('recordedat')->datetime();
+        $schema->column('recordedat')->datetime(6);
         $schema->index(['id'])->unique();
         $schema->index(['stream', 'version'])->unique();
         $schema->index(['correlationid']);
@@ -220,7 +220,7 @@ final class CycleEventStore implements EventStoreInterface
                     'metadata' => $event->metadata?->toJson(),
                     'correlationid' => $event->correlationId?->value,
                     'causationid' => $event->causationId?->value,
-                    'recordedat' => $this->clock->now(),
+                    'recordedat' => $this->clock->now()->format('Y-m-d H:i:s.u'),
                 ]
             )
             ->run();
