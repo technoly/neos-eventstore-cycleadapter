@@ -114,7 +114,7 @@ final class CycleEventStream implements EventStreamInterface
         $result = $selectQuery->run();
         /** @var array<string, string> $row */
         foreach ($result->fetchAll() as $row) {
-            $recordedAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $row['recordedat']);
+            $recordedAt = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s.u', $row['recordedat']);
             if ($recordedAt === false) {
                 throw new \RuntimeException(
                     sprintf('Failed to parse "recordetat" value of "%s" in event "%s"', $row['recordedat'], $row['id']),
