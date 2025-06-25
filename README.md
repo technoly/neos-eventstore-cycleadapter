@@ -11,7 +11,7 @@ It is essentially an adaption of the [Doctrine adapter](https://github.com/neos/
 Install via [composer](https://getcomposer.org):
 
 ```shell
-composer require technoly/neos-eventstore-cycleadapter
+composer require technoly/neoseventstore-cycleadapter
 ```
 
 ### Create an instance
