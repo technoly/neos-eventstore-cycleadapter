@@ -138,7 +138,7 @@ final class CycleEventStore implements EventStoreInterface
             } catch (\Throwable $exception) {
                 $this->connection->rollback();
                 $this->logger->error(
-                    'Cycle transaction error {className}: {message} ({code}) with trace {stacktrace}',
+                    'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
                     [
                         'className' => get_class($exception),
                         'message' => $exception->getMessage(),
@@ -146,6 +146,7 @@ final class CycleEventStore implements EventStoreInterface
                         'stacktrace' => $exception->getTraceAsString(),
                     ]
                 );
+                throw $exception;
             }
         }
     }
