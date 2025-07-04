@@ -39,7 +39,7 @@ final class CycleEventStore implements EventStoreInterface
     public function __construct(
         private readonly DatabaseInterface $connection,
         private readonly string $eventTableName,
-        private readonly LoggerInterface $logger,
+        private readonly ?LoggerInterface $logger = null,
         ClockInterface $clock = null
     ) {
         $this->clock = $clock ?? new class implements ClockInterface {
@@ -137,15 +137,17 @@ final class CycleEventStore implements EventStoreInterface
                 throw $exception;
             } catch (\Throwable $exception) {
                 $this->connection->rollback();
-                $this->logger->error(
-                    'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
-                    [
-                        'className' => get_class($exception),
-                        'message' => $exception->getMessage(),
-                        'code' => $exception->getCode(),
-                        'stacktrace' => $exception->getTraceAsString(),
-                    ]
-                );
+                if ($this->logger instanceof LoggerInterface) {
+                    $this->logger->error(
+                        'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
+                        [
+                            'className' => get_class($exception),
+                            'message' => $exception->getMessage(),
+                            'code' => $exception->getCode(),
+                            'stacktrace' => $exception->getTraceAsString(),
+                        ]
+                    );
+                }
                 throw $exception;
             }
         }
