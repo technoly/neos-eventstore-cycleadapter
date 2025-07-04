@@ -29,6 +29,7 @@ use Neos\EventStore\Model\EventStream\MaybeVersion;
 use Neos\EventStore\Model\EventStream\VirtualStreamName;
 use Neos\EventStore\Model\EventStream\VirtualStreamType;
 use Psr\Clock\ClockInterface;
+use Psr\Log\LoggerInterface;
 use Webmozart\Assert\Assert;
 
 final class CycleEventStore implements EventStoreInterface
@@ -38,6 +39,7 @@ final class CycleEventStore implements EventStoreInterface
     public function __construct(
         private readonly DatabaseInterface $connection,
         private readonly string $eventTableName,
+        private readonly ?LoggerInterface $logger = null,
         ClockInterface $clock = null
     ) {
         $this->clock = $clock ?? new class implements ClockInterface {
@@ -130,8 +132,22 @@ final class CycleEventStore implements EventStoreInterface
                     throw new ConcurrencyException($exception->getMessage(), 1705330559, $exception);
                 }
                 throw $exception;
-            } catch (DBALException | ConcurrencyException | \JsonException $exception) {
+            } catch (DBALException|ConcurrencyException|\JsonException $exception) {
                 $this->connection->rollback();
+                throw $exception;
+            } catch (\Throwable $exception) {
+                $this->connection->rollback();
+                if ($this->logger instanceof LoggerInterface) {
+                    $this->logger->error(
+                        'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
+                        [
+                            'className' => get_class($exception),
+                            'message' => $exception->getMessage(),
+                            'code' => $exception->getCode(),
+                            'stacktrace' => $exception->getTraceAsString(),
+                        ]
+                    );
+                }
                 throw $exception;
             }
         }
