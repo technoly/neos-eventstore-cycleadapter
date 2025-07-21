@@ -150,7 +150,7 @@ final class CycleEventStore implements EventStoreInterface
                     );
                 }
                 throw $exception;
-            } catch (DBALException|ConcurrencyException|\JsonException $exception) {
+            } catch (DBALException | ConcurrencyException | \JsonException $exception) {
                 if ($this->logger instanceof LoggerInterface) {
                     $this->logger->error(
                         'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
