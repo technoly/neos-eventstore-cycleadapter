@@ -96,7 +96,10 @@ final class CycleEventStore implements EventStoreInterface
                         $transactionLevel = $db->getDriver()->getTransactionLevel();
                         if ($transactionLevel > 1) {
                             throw new \RuntimeException(
-                                'A transaction is active already, can\'t commit events! Transaction level: ' . $transactionLevel,
+                                sprintf(
+                                    'A transaction is active already, can\'t commit events! Transaction level: %s',
+                                    $transactionLevel
+                                ),
                                 1547829131
                             );
                         }
@@ -151,7 +154,7 @@ final class CycleEventStore implements EventStoreInterface
                     );
                 }
                 throw $exception;
-            } catch (DBALException|ConcurrencyException|\JsonException $exception) {
+            } catch (DBALException | ConcurrencyException | \JsonException $exception) {
                 if ($this->logger instanceof LoggerInterface) {
                     $this->logger->error(
                         'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
