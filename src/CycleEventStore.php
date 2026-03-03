@@ -171,7 +171,7 @@ final class CycleEventStore implements EventStoreInterface
         // The event type in the format "<BoundedContext>:<EventType>"
         $schema->column('type')->string()->nullable(false);
         // The event payload as JSON
-        $schema->column('payload')->text()->nullable(false);
+        $schema->column('payload')->mediumText()->nullable(false);
         // The event metadata as JSON
         $schema->column('metadata')->json();
         // The unique event id, usually a UUID
