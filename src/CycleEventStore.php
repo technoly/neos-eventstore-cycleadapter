@@ -29,6 +29,7 @@ use Neos\EventStore\Model\EventStream\MaybeVersion;
 use Neos\EventStore\Model\EventStream\VirtualStreamName;
 use Neos\EventStore\Model\EventStream\VirtualStreamType;
 use Psr\Clock\ClockInterface;
+use Psr\Log\LoggerInterface;
 use Webmozart\Assert\Assert;
 
 final class CycleEventStore implements EventStoreInterface
@@ -38,6 +39,7 @@ final class CycleEventStore implements EventStoreInterface
     public function __construct(
         private readonly DatabaseInterface $connection,
         private readonly string $eventTableName,
+        private readonly ?LoggerInterface $logger = null,
         ClockInterface $clock = null
     ) {
         $this->clock = $clock ?? new class implements ClockInterface {
@@ -83,35 +85,48 @@ final class CycleEventStore implements EventStoreInterface
         $retryAttempt = 0;
         while (true) {
             $this->reconnectDatabaseConnection();
-            if ($this->connection->getDriver()->getTransactionLevel() > 0) {
-                throw new \RuntimeException('A transaction is active already, can\'t commit events!', 1547829131);
-            }
-            $this->connection->begin();
+
             try {
-                $maybeVersion = $this->getStreamVersion($streamName);
-                $expectedVersion->verifyVersion($maybeVersion);
-                $version = $maybeVersion->isNothing() ? Version::first() : $maybeVersion->unwrap()->next();
-                $lastCommittedVersion = $version;
-                foreach ($events as $event) {
-                    $this->commitEvent($streamName, $event, $version);
-                    $lastCommittedVersion = $version;
-                    $version = $version->next();
-                }
-                $lastInsertId = $this->connection->getDriver()->lastInsertID();
-                if (!is_numeric($lastInsertId)) {
-                    throw new \RuntimeException(
-                        sprintf(
-                            'Expected last insert id to be numeric, but it is: %s',
-                            get_debug_type($lastInsertId)
-                        ),
-                        1651749706
-                    );
-                }
-                $this->connection->commit();
-                return new CommitResult($lastCommittedVersion, SequenceNumber::fromInteger((int)$lastInsertId));
+                return $this->connection->transaction(
+                    function (DatabaseInterface $db) use (
+                        $streamName,
+                        $events,
+                        $expectedVersion
+                    ) {
+                        $transactionLevel = $db->getDriver()->getTransactionLevel();
+                        if ($transactionLevel > 1) {
+                            throw new \RuntimeException(
+                                sprintf(
+                                    'A transaction is active already, can\'t commit events! Transaction level: %s',
+                                    $transactionLevel
+                                ),
+                                1547829131
+                            );
+                        }
+                        $maybeVersion = $this->getStreamVersion($streamName);
+                        $expectedVersion->verifyVersion($maybeVersion);
+                        $version = $maybeVersion->isNothing() ? Version::first() : $maybeVersion->unwrap()->next();
+                        $lastCommittedVersion = $version;
+                        foreach ($events as $event) {
+                            $this->commitEvent($streamName, $event, $version);
+                            $lastCommittedVersion = $version;
+                            $version = $version->next();
+                        }
+                        $lastInsertId = $db->getDriver()->lastInsertID();
+                        if (!is_numeric($lastInsertId)) {
+                            throw new \RuntimeException(
+                                sprintf(
+                                    'Expected last insert id to be numeric, but it is: %s',
+                                    get_debug_type($lastInsertId)
+                                ),
+                                1651749706
+                            );
+                        }
+                        return new CommitResult($lastCommittedVersion, SequenceNumber::fromInteger((int)$lastInsertId));
+                    }
+                );
             } catch (ConstrainException $exception) {
                 if ($retryAttempt >= $maxRetryAttempts) {
-                    $this->connection->rollBack();
                     throw new ConcurrencyException(
                         sprintf('Failed after %d retry attempts', $retryAttempt),
                         1573817175,
@@ -121,17 +136,49 @@ final class CycleEventStore implements EventStoreInterface
                 usleep((int)($retryWaitInterval * 1E6));
                 $retryAttempt++;
                 $retryWaitInterval *= 2;
-                $this->connection->rollBack();
                 continue;
             } catch (StatementException $exception) {
                 // Catch "deadlock" and "lock wait timeout"
                 if (in_array($exception->getCode(), ['40001', 'HY000'])) {
-                    $this->connection->rollback();
                     throw new ConcurrencyException($exception->getMessage(), 1705330559, $exception);
+                }
+                if ($this->logger instanceof LoggerInterface) {
+                    $this->logger->error(
+                        'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
+                        [
+                            'className' => get_class($exception),
+                            'message' => $exception->getMessage(),
+                            'code' => $exception->getCode(),
+                            'stacktrace' => $exception->getTraceAsString(),
+                        ]
+                    );
                 }
                 throw $exception;
             } catch (DBALException | ConcurrencyException | \JsonException $exception) {
-                $this->connection->rollback();
+                if ($this->logger instanceof LoggerInterface) {
+                    $this->logger->error(
+                        'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
+                        [
+                            'className' => get_class($exception),
+                            'message' => $exception->getMessage(),
+                            'code' => $exception->getCode(),
+                            'stacktrace' => $exception->getTraceAsString(),
+                        ]
+                    );
+                }
+                throw $exception;
+            } catch (\Throwable $exception) {
+                if ($this->logger instanceof LoggerInterface) {
+                    $this->logger->error(
+                        'Cycle commit events error {className}: {message} ({code}) with trace {stacktrace}',
+                        [
+                            'className' => get_class($exception),
+                            'message' => $exception->getMessage(),
+                            'code' => $exception->getCode(),
+                            'stacktrace' => $exception->getTraceAsString(),
+                        ]
+                    );
+                }
                 throw $exception;
             }
         }
