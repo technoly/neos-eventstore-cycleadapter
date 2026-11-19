@@ -40,7 +40,7 @@ final class CycleEventStore implements EventStoreInterface
         private readonly DatabaseInterface $connection,
         private readonly string $eventTableName,
         private readonly ?LoggerInterface $logger = null,
-        ClockInterface $clock = null
+        ?ClockInterface $clock = null
     ) {
         $this->clock = $clock ?? new class implements ClockInterface {
             public function now(): DateTimeImmutable
@@ -52,7 +52,7 @@ final class CycleEventStore implements EventStoreInterface
 
     public function load(
         VirtualStreamName|StreamName $streamName,
-        EventStreamFilter $filter = null
+        ?EventStreamFilter $filter = null
     ): EventStreamInterface {
         $this->reconnectDatabaseConnection();
         $selectQuery = $this->connection
